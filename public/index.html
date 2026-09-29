@@ -223,16 +223,22 @@
       </div>
 
       <div class="input-row">
-        <input
-          id="messageInput"
-          type="text"
-          placeholder="Escribe cómo te sientes..."
-          autocomplete="off"
-        >
 
-        <button id="sendButton" onclick="sendMessage()">
-          ➤
-        </button>
+  <button id="voiceButton" onclick="startVoice()">
+    🎙️
+  </button>
+
+  <input
+    id="messageInput"
+    type="text"
+    placeholder="Escribe o habla..."
+    autocomplete="off"
+  >
+
+  <button id="sendButton" onclick="sendMessage()">
+    ➤
+  </button>
+
       </div>
 
       <p id="status" class="status"></p>
