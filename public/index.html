@@ -289,7 +289,43 @@
 
   let conversation = [];
 
+function startVoice() {
 
+  const input = document.getElementById("messageInput");
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Tu navegador no admite reconocimiento de voz.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang = "es-ES";
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onstart = function() {
+    document.getElementById("voiceButton").textContent = "🔴";
+  };
+
+  recognition.onresult = function(event) {
+    input.value = event.results[0][0].transcript;
+  };
+
+  recognition.onerror = function() {
+    document.getElementById("voiceButton").textContent = "🎙️";
+  };
+
+  recognition.onend = function() {
+    document.getElementById("voiceButton").textContent = "🎙️";
+  };
+
+  recognition.start();
+}
   function selectMood(button, mood) {
 
     document.querySelectorAll(".mood").forEach(function(btn) {
