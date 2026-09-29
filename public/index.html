@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>MenteIA</title>
 
   <style>
@@ -87,7 +87,7 @@
     }
 
     .chat {
-      height: 420px;
+      height: 470px;
       display: flex;
       flex-direction: column;
     }
@@ -122,10 +122,12 @@
       display: flex;
       gap: 8px;
       margin-top: 10px;
+      align-items: stretch;
     }
 
     #messageInput {
       flex: 1;
+      min-width: 0;
       border: 1px solid #ddd;
       border-radius: 14px;
       padding: 13px;
@@ -133,14 +135,37 @@
       outline: none;
     }
 
+    #messageInput:focus {
+      border-color: #6c63ff;
+    }
+
+    #voiceButton,
     #sendButton {
       border: 0;
       border-radius: 14px;
+      cursor: pointer;
+    }
+
+    #voiceButton {
+      width: 52px;
+      background: #f0f1f6;
+      font-size: 22px;
+    }
+
+    #voiceButton.listening {
+      background: #ffe4e4;
+    }
+
+    #sendButton {
       background: #6c63ff;
       color: white;
       padding: 0 18px;
       font-size: 18px;
-      cursor: pointer;
+    }
+
+    #sendButton:disabled {
+      opacity: .5;
+      cursor: not-allowed;
     }
 
     .exercise {
@@ -159,6 +184,8 @@
       color: #39a96b;
       font-size: 13px;
       font-weight: bold;
+      min-height: 18px;
+      margin-bottom: 0;
     }
 
     footer {
@@ -181,63 +208,84 @@
 
   <div class="content">
 
+    <!-- ESTADO DE ÁNIMO -->
+
     <div class="card">
+
       <h2>¿Cómo te sientes hoy?</h2>
 
       <div class="moods">
+
         <button class="mood" onclick="selectMood(this, 'Muy mal')">
-          😞<span>Muy mal</span>
+          😞
+          <span>Muy mal</span>
         </button>
 
         <button class="mood" onclick="selectMood(this, 'Mal')">
-          😔<span>Mal</span>
+          😔
+          <span>Mal</span>
         </button>
 
         <button class="mood" onclick="selectMood(this, 'Normal')">
-          😐<span>Normal</span>
+          😐
+          <span>Normal</span>
         </button>
 
         <button class="mood" onclick="selectMood(this, 'Bien')">
-          🙂<span>Bien</span>
+          🙂
+          <span>Bien</span>
         </button>
 
         <button class="mood" onclick="selectMood(this, 'Muy bien')">
-          😄<span>Muy bien</span>
+          😄
+          <span>Muy bien</span>
         </button>
+
       </div>
 
       <p id="moodResult" class="small"></p>
+
     </div>
 
+
+    <!-- CHAT -->
 
     <div class="card chat">
 
       <h2>💬 Habla con MenteIA</h2>
 
       <div id="messages">
+
         <div class="message assistant">
           Hola 👋 Soy MenteIA.
 
           Estoy aquí para escucharte. ¿Cómo estás hoy?
         </div>
+
       </div>
+
 
       <div class="input-row">
 
-  <button id="voiceButton" onclick="startVoice()">
-    🎙️
-  </button>
+        <button
+          id="voiceButton"
+          onclick="startVoice()"
+          title="Hablar con MenteIA">
+          🎙️
+        </button>
 
-  <input
-    id="messageInput"
-    type="text"
-    placeholder="Escribe o habla..."
-    autocomplete="off"
-  >
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Escribe o habla..."
+          autocomplete="off"
+        >
 
-  <button id="sendButton" onclick="sendMessage()">
-    ➤
-  </button>
+        <button
+          id="sendButton"
+          onclick="sendMessage()">
+          ➤
+        </button>
 
       </div>
 
@@ -246,35 +294,51 @@
     </div>
 
 
+    <!-- EJERCICIOS -->
+
     <div class="card">
+
       <h2>🌿 Ejercicios para ti</h2>
 
       <div class="exercise">
+
         <strong>Respiración 4-4</strong>
+
         <p class="small">
           Inspira durante 4 segundos y expira durante 4 segundos.
           Repite durante 2 minutos.
         </p>
+
       </div>
 
+
       <div class="exercise">
+
         <strong>Ordena tus pensamientos</strong>
+
         <p class="small">
           Escribe qué te preocupa y separa lo que puedes controlar
           de lo que no puedes controlar.
         </p>
+
       </div>
 
+
       <div class="exercise">
+
         <strong>Pequeño paso</strong>
+
         <p class="small">
           Elige una cosa pequeña que puedas hacer hoy para encontrarte
           un poco mejor.
         </p>
+
       </div>
+
     </div>
 
   </div>
+
 
   <footer>
     MenteIA ofrece acompañamiento emocional y no sustituye a un profesional sanitario.
@@ -285,47 +349,21 @@
 
 <script>
 
-  const API_URL = "https://menteia.onrender.com/api/chat";
+  /* ==============================
+     CONEXIÓN CON MENTEIA
+     ============================== */
+
+  const API_URL =
+    "https://menteia.onrender.com/api/chat";
+
 
   let conversation = [];
 
-function startVoice() {
 
-  const input = document.getElementById("messageInput");
+  /* ==============================
+     ESTADO DE ÁNIMO
+     ============================== */
 
-  const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Tu navegador no admite reconocimiento de voz.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-
-  recognition.lang = "es-ES";
-  recognition.interimResults = false;
-  recognition.continuous = false;
-
-  recognition.onstart = function() {
-    document.getElementById("voiceButton").textContent = "🔴";
-  };
-
-  recognition.onresult = function(event) {
-    input.value = event.results[0][0].transcript;
-  };
-
-  recognition.onerror = function() {
-    document.getElementById("voiceButton").textContent = "🎙️";
-  };
-
-  recognition.onend = function() {
-    document.getElementById("voiceButton").textContent = "🎙️";
-  };
-
-  recognition.start();
-}
   function selectMood(button, mood) {
 
     document.querySelectorAll(".mood").forEach(function(btn) {
@@ -344,75 +382,111 @@ function startVoice() {
   }
 
 
+  /* ==============================
+     AÑADIR MENSAJES
+     ============================== */
+
   function addMessage(text, type) {
 
-    const messages = document.getElementById("messages");
+    const messages =
+      document.getElementById("messages");
 
-    const div = document.createElement("div");
+    const div =
+      document.createElement("div");
 
-    div.className = "message " + type;
+    div.className =
+      "message " + type;
 
     div.textContent = text;
 
     messages.appendChild(div);
 
-    messages.scrollTop = messages.scrollHeight;
+    messages.scrollTop =
+      messages.scrollHeight;
   }
 
 
+  /* ==============================
+     ENVIAR MENSAJE
+     ============================== */
+
   async function sendMessage() {
 
-    const input = document.getElementById("messageInput");
-    const button = document.getElementById("sendButton");
-    const status = document.getElementById("status");
+    const input =
+      document.getElementById("messageInput");
 
-    const text = input.value.trim();
+    const button =
+      document.getElementById("sendButton");
 
-    if (!text) return;
+    const status =
+      document.getElementById("status");
+
+    const text =
+      input.value.trim();
+
+    if (!text) {
+      return;
+    }
+
 
     addMessage(text, "user");
+
 
     conversation.push({
       role: "user",
       content: text
     });
 
+
     input.value = "";
 
     button.disabled = true;
 
-    status.textContent = "MenteIA está pensando...";
+    status.textContent =
+      "MenteIA está pensando...";
 
 
     try {
 
-      const response = await fetch(API_URL, {
+      const response =
+        await fetch(API_URL, {
 
-        method: "POST",
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json"
-        },
+          headers: {
+            "Content-Type": "application/json"
+          },
 
-        body: JSON.stringify({
-          messages: conversation
-        })
+          body: JSON.stringify({
+            messages: conversation
+          })
 
-      });
+        });
 
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
 
       if (!response.ok) {
-        throw new Error(data.error || "Error del servidor");
+
+        throw new Error(
+          data.error ||
+          "Error del servidor"
+        );
+
       }
 
 
       const reply =
-        data.reply || "No he podido responderte.";
+        data.reply ||
+        "No he podido responderte.";
 
-      addMessage(reply, "assistant");
+
+      addMessage(
+        reply,
+        "assistant"
+      );
 
 
       conversation.push({
@@ -420,38 +494,237 @@ function startVoice() {
         content: reply
       });
 
-      status.textContent = "● MenteIA conectada";
+
+      status.textContent =
+        "● MenteIA conectada";
+
+
+      /* RESPUESTA POR VOZ */
+
+      speakText(reply);
 
 
     } catch (error) {
 
       console.error(error);
 
+
       addMessage(
         "No he podido conectarme en este momento. Inténtalo de nuevo en unos segundos.",
         "assistant"
       );
 
-      status.textContent = "Error de conexión";
+
+      status.textContent =
+        "Error de conexión";
+
     }
 
+
     button.disabled = false;
+
     input.focus();
+
   }
 
 
-  document.getElementById("messageInput").addEventListener(
-    "keydown",
-    function(event) {
+  /* ==============================
+     RECONOCIMIENTO DE VOZ
+     ============================== */
 
-      if (event.key === "Enter") {
-        sendMessage();
-      }
+  function startVoice() {
+
+    const input =
+      document.getElementById("messageInput");
+
+    const voiceButton =
+      document.getElementById("voiceButton");
+
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+
+    if (!SpeechRecognition) {
+
+      alert(
+        "Tu navegador no admite reconocimiento de voz."
+      );
+
+      return;
+    }
+
+
+    const recognition =
+      new SpeechRecognition();
+
+
+    recognition.lang =
+      "es-ES";
+
+    recognition.interimResults =
+      false;
+
+    recognition.continuous =
+      false;
+
+
+    recognition.onstart =
+      function() {
+
+        voiceButton.textContent =
+          "🔴";
+
+        voiceButton.classList.add(
+          "listening"
+        );
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          "Escuchando...";
+
+      };
+
+
+    recognition.onresult =
+      function(event) {
+
+        const transcript =
+          event.results[0][0].transcript;
+
+        input.value =
+          transcript;
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          "Voz reconocida. Pulsa ➤ para enviar.";
+
+      };
+
+
+    recognition.onerror =
+      function(event) {
+
+        console.error(
+          "Error de voz:",
+          event.error
+        );
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          "No he podido reconocer la voz.";
+
+      };
+
+
+    recognition.onend =
+      function() {
+
+        voiceButton.textContent =
+          "🎙️";
+
+        voiceButton.classList.remove(
+          "listening"
+        );
+
+      };
+
+
+    recognition.start();
+
+  }
+
+
+  /* ==============================
+     RESPUESTA HABLADA
+     ============================== */
+
+  function speakText(text) {
+
+    if (
+      !("speechSynthesis" in window)
+    ) {
+
+      return;
 
     }
-  );
+
+
+    window.speechSynthesis.cancel();
+
+
+    const speech =
+      new SpeechSynthesisUtterance(
+        text
+      );
+
+
+    speech.lang =
+      "es-ES";
+
+    speech.rate =
+      1;
+
+    speech.pitch =
+      1;
+
+
+    speech.onstart =
+      function() {
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          "🔊 MenteIA está hablando...";
+
+      };
+
+
+    speech.onend =
+      function() {
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          "● MenteIA conectada";
+
+      };
+
+
+    window.speechSynthesis.speak(
+      speech
+    );
+
+  }
+
+
+  /* ==============================
+     ENTER PARA ENVIAR
+     ============================== */
+
+  document
+    .getElementById("messageInput")
+    .addEventListener(
+      "keydown",
+      function(event) {
+
+        if (
+          event.key === "Enter"
+        ) {
+
+          sendMessage();
+
+        }
+
+      }
+    );
 
 </script>
 
 </body>
-</html>
+</ht
+        
